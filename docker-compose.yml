@@ -1,0 +1,12 @@
+version: '3.8'
+name: api_environment
+services:
+  apienv:
+    image: apienv
+    ports:
+      - "80:8080"
+    devices:
+      - /dev/gpiomem:/dev/gpiomem
+    build:
+      context: .
+    restart: always
