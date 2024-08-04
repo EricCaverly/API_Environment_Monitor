@@ -1,12 +1,11 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/MichaelS11/go-dht"
+	"github.com/gin-gonic/gin"
 )
 
 type env_data struct {
@@ -19,20 +18,23 @@ var monitor *dht.DHT
 func main() {
     // Initialize the DHT object
     var err error
-    monitor, err = initialize_monitor("GPIO19", dht.Celsius)
+    //monitor, err = initialize_monitor("GPIO19", dht.Celsius)
+    monitor, err = initialize_monitor("GPIO4", dht.Celsius)
     if err != nil {
         log.Fatal("Error creating device: ", err)
     }
-
-    // Add handlers (endpoints)
-    http.HandleFunc("/env_data", env_handler)
 
     // Server info
     addr := ":8080"
     log.Printf("Server listening on %s", addr)
 
+    // Setup gin HTTP
+    router := gin.Default()
+    router.LoadHTMLGlob("./templates/*.html")
+    router.GET("/", env_handler)
+
     // Start HTTP server
-    err = http.ListenAndServe(addr, nil)
+    err = router.Run(addr)
     if err != nil {
         log.Fatal(err)
     }
@@ -41,7 +43,7 @@ func main() {
 
 
 // Provides environment data
-func env_handler(w http.ResponseWriter, r *http.Request) {
+func env_handler(c *gin.Context) {
     // Get Data from DHT22
     var data env_data
     var err error
@@ -49,14 +51,13 @@ func env_handler(w http.ResponseWriter, r *http.Request) {
     
     // Check for read error
     if err != nil {
-        http.Error(w, fmt.Sprintf("Error: %e", err), http.StatusInternalServerError)
+        c.String(http.StatusInternalServerError, "Error: %s", err.Error())
         return
     }
 
-    // Return data and log the interaction
-    jsonData, err := json.Marshal(data)
-    fmt.Fprintf(w, "%s", string(jsonData))
-    log.Printf("[/env_data] Server responded to client - %s", r.RemoteAddr)
+    // Return the HTML 
+    c.HTML(http.StatusOK, "index.html", gin.H{"temp": data.Temp, "humidity": data.Humidity})
+    return
 }
 
 
