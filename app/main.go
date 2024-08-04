@@ -34,7 +34,7 @@ func main() {
     router.GET("/", env_handler)
 
     // Start HTTP server
-    err = router.Run(addr)
+    err = router.RunTLS(addr, "./certs/server.crt", "./certs/server.key")
     if err != nil {
         log.Fatal(err)
     }
